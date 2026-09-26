@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presensi Kehadiran PPNPN KPPN Malang</title>
+<style>
+  :root{
+    --blue:#0b4fbf;
+    --blue-dark:#083b8f;
+    --grey:#d9d9d9;
+    --white:#ffffff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    background:#f2f4f8;
+    color:#111;
+    padding-bottom:40px;
+  }
+  .wrap{
+    max-width:520px;
+    margin:0 auto;
+    padding:20px 16px;
+  }
+  h1{
+    color:var(--blue);
+    font-size:2.1rem;
+    text-align:center;
+    line-height:1.15;
+    margin:10px 0 20px;
+    text-transform:uppercase;
+    font-weight:800;
+  }
+  .clock-box{
+    background:var(--blue);
+    color:#fff;
+    border-radius:16px;
+    padding:18px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .clock-time{
+    font-size:2.6rem;
+    font-weight:800;
+    letter-spacing:1px;
+  }
+  .clock-date{
+    font-size:1rem;
+    font-weight:700;
+    text-align:right;
+    line-height:1.3;
+  }
+  .field{
+    width:100%;
+    background:var(--blue);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:14px 16px;
+    font-size:1.1rem;
+    margin-bottom:12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+    appearance:none;
+    -webkit-appearance:none;
+  }
+  select.field{
+    font-family:inherit;
+  }
+  .row-2{
+    display:flex;
+    gap:10px;
+  }
+  .row-2 .field{flex:1;}
+  .hidden{display:none !important;}
+  .photo-box{
+    border:2px dashed #999;
+    background:var(--grey);
+    border-radius:8px;
+    padding:20px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:14px;
+    cursor:pointer;
+    min-height:60px;
+  }
+  .photo-box img{
+    max-width:100%;
+    max-height:180px;
+    border-radius:6px;
+  }
+  .photo-box .placeholder{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:#333;
+  }
+  .geo-box{
+    border:2px dashed #999;
+    background:var(--grey);
+    border-radius:8px;
+    min-height:160px;
+    margin-bottom:18px;
+    overflow:hidden;
+    position:relative;
+  }
+  .geo-box iframe{
+    width:100%;
+    height:160px;
+    border:0;
+  }
+  .geo-empty{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:160px;
+    color:#c0392b;
+    font-size:1.6rem;
+  }
+  .refresh-icon{
+    font-size:1.2rem;
+  }
+  button.submit{
+    width:100%;
+    background:var(--blue);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:18px;
+    font-size:1.4rem;
+    font-weight:800;
+    letter-spacing:1px;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  button.submit:disabled{
+    opacity:0.6;
+    cursor:not-allowed;
+  }
+  footer{
+    text-align:center;
+    color:#666;
+    font-size:0.85rem;
+    margin-top:24px;
+  }
+  #msgBox{
+    display:none;
+    background:#e8f7ee;
+    border:1px solid #2ecc71;
+    color:#1a7a3d;
+    padding:14px 16px;
+    border-radius:10px;
+    margin-bottom:14px;
+    font-size:0.95rem;
+  }
+  #errBox{
+    display:none;
+    background:#fdeaea;
+    border:1px solid #e74c3c;
+    color:#a92828;
+    padding:14px 16px;
+    border-radius:10px;
+    margin-bottom:14px;
+    font-size:0.95rem;
+  }
+  input[type=file]{display:none;}
+  label.small{
+    font-size:0.8rem;
+    color:#555;
+    display:block;
+    margin:-6px 0 10px 4px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Presensi Kehadiran PPNPN<br>KPPN Malang</h1>
+
+  <div class="clock-box">
+    <div class="clock-time" id="clockTime">00:00:00</div>
+    <div class="clock-date" id="clockDate">-</div>
+  </div>
+
+  <div id="msgBox"></div>
+  <div id="errBox"></div>
+
+  <select id="namaSelect" class="field">
+    <option value="">Nama PPNPN ▾</option>
+  </select>
+
+  <div class="row-2">
+    <div class="field" id="jabatanBox" style="cursor:default;">Jabatan: -</div>
+    <select id="shiftSelect" class="field hidden">
+      <option value="">Shift Pagi/Malam ▾</option>
+      <option value="Pagi">Pagi</option>
+      <option value="Malam">Malam</option>
+    </select>
+  </div>
+
+  <select id="jenisSelect" class="field">
+    <option value="">Jenis Presensi ▾</option>
+    <option value="Presensi Normal">Presensi Normal</option>
+    <option value="Lembur Hari Libur">Lembur Hari Libur</option>
+    <option value="Dinas Luar">Dinas Luar</option>
+  </select>
+
+  <select id="clockTypeSelect" class="field">
+    <option value="">Clock In / Clock Out ▾</option>
+    <option value="Clock In">Clock In</option>
+    <option value="Clock Out">Clock Out</option>
+  </select>
+
+  <div class="field" style="cursor:default;">Foto Presensi</div>
+  <div class="photo-box" id="photoBox">
+    <div class="placeholder" id="photoPlaceholder">
+      📷 <span>Ambil / pilih foto (gunakan app kamera ber-geotag)</span>
+    </div>
+    <img id="photoPreview" class="hidden">
+  </div>
+  <input type="file" id="photoInput" accept="image/*">
+
+  <div class="field" id="geoBtn">Geotagging <span class="refresh-icon">⟳</span></div>
+  <div class="geo-box" id="geoBox">
+    <div class="geo-empty" id="geoEmpty">📍</div>
+    <iframe id="geoFrame" class="hidden"></iframe>
+  </div>
+
+  <button class="submit" id="submitBtn">SUBMIT</button>
+
+  <footer id="footerText">2026 created by Dirgayusa</footer>
+</div>
+
+<script>
+/* ======================= CONFIG ======================= */
+// Ganti dengan URL Web App hasil deploy Google Apps Script (Code.gs)
+const API_URL = "https://script.google.com/macros/s/AKfycbwcZO8bolQxhTvcTo_1aDUxk75kjZOfEwvAXZzGBqgawCYviMpbQxp3cqQBAQYVVJdX/exec";
+const LAST_UPDATED = "28 September 2026"; // update manual tiap kali kamu edit halaman ini
+/* ========================================================= */
+
+document.getElementById('footerText').textContent =
+  "Terakhir diperbarui: " + LAST_UPDATED + " — created by Dirgayusa";
+
+/* ---------- Realtime clock (Indonesian) ---------- */
+const HARI = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+const BULAN = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+
+function pad(n){ return n.toString().padStart(2,'0'); }
+
+function tickClock(){
+  const now = new Date();
+  document.getElementById('clockTime').textContent =
+    pad(now.getHours())+":"+pad(now.getMinutes())+":"+pad(now.getSeconds());
+  document.getElementById('clockDate').innerHTML =
+    HARI[now.getDay()]+", "+now.getDate()+"<br>"+BULAN[now.getMonth()]+" "+now.getFullYear();
+}
+tickClock();
+setInterval(tickClock, 1000);
+
+function nowStringID(){
+  const now = new Date();
+  return HARI[now.getDay()]+", "+now.getDate()+" "+BULAN[now.getMonth()]+" "+now.getFullYear()+
+    " "+pad(now.getHours())+":"+pad(now.getMinutes())+":"+pad(now.getSeconds());
+}
+
+/* ---------- Load DATA (Nama/Jabatan/Nickname) from sheet ---------- */
+let PPNPN_MAP = {}; // { nama: {jabatan, nickname} }
+
+async function loadData(){
+  try{
+    const res = await fetch(API_URL + "?action=getData");
+    const json = await res.json();
+    const sel = document.getElementById('namaSelect');
+    (json.data || []).forEach(row=>{
+      PPNPN_MAP[row.nama] = { jabatan: row.jabatan, nickname: row.nickname };
+      const opt = document.createElement('option');
+      opt.value = row.nama;
+      opt.textContent = row.nama;
+      sel.appendChild(opt);
+    });
+  }catch(e){
+    showErr("Gagal memuat daftar nama PPNPN. Periksa koneksi / URL API.");
+  }
+}
+loadData();
+
+/* ---------- Jabatan auto-fill + conditional Shift ---------- */
+const namaSelect = document.getElementById('namaSelect');
+const jabatanBox = document.getElementById('jabatanBox');
+const shiftSelect = document.getElementById('shiftSelect');
+
+namaSelect.addEventListener('change', ()=>{
+  const info = PPNPN_MAP[namaSelect.value];
+  const jabatan = info ? info.jabatan : '-';
+  jabatanBox.textContent = "Jabatan: " + jabatan;
+  if(jabatan && jabatan.toLowerCase() === 'security'){
+    shiftSelect.classList.remove('hidden');
+  }else{
+    shiftSelect.classList.add('hidden');
+    shiftSelect.value = "";
+  }
+});
+
+/* ---------- Foto Presensi (camera app chooser + resize < 500KB) ---------- */
+const photoBox = document.getElementById('photoBox');
+const photoInput = document.getElementById('photoInput');
+const photoPreview = document.getElementById('photoPreview');
+const photoPlaceholder = document.getElementById('photoPlaceholder');
+let photoBase64 = null;
+
+photoBox.addEventListener('click', ()=> photoInput.click());
+// NOTE: no "capture" attribute on purpose -> lets Android/iOS show the full
+// app chooser (including 3rd-party geotag camera apps), not just the stock camera.
+
+photoInput.addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    photoBase64 = await resizeImage(file, 500 * 1024);
+    photoPreview.src = photoBase64;
+    photoPreview.classList.remove('hidden');
+    photoPlaceholder.classList.add('hidden');
+  }catch(err){
+    showErr("Gagal memproses foto: " + err.message);
+  }
+});
+
+function resizeImage(file, maxBytes){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = ()=>{ img.src = reader.result; };
+    reader.onerror = ()=> reject(new Error("File tidak terbaca"));
+    img.onload = ()=>{
+      let width = img.width, height = img.height;
+      let quality = 0.85;
+      let maxDim = 1600;
+
+      function render(dim, q){
+        const scale = Math.min(1, dim / Math.max(width, height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(width * scale);
+        canvas.height = Math.round(height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL('image/jpeg', q);
+      }
+
+      let dataUrl = render(maxDim, quality);
+      // iteratively shrink quality then dimension until under maxBytes
+      let guard = 0;
+      while(dataUrl.length * 0.75 > maxBytes && guard < 12){
+        if(quality > 0.4){
+          quality -= 0.1;
+        }else{
+          maxDim = Math.round(maxDim * 0.8);
+        }
+        dataUrl = render(maxDim, quality);
+        guard++;
+      }
+      resolve(dataUrl);
+    };
+    img.onerror = ()=> reject(new Error("Gambar tidak valid"));
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ---------- Geotagging ---------- */
+const geoBtn = document.getElementById('geoBtn');
+const geoEmpty = document.getElementById('geoEmpty');
+const geoFrame = document.getElementById('geoFrame');
+let currentGeo = null; // {lat, lng}
+
+function refreshGeo(){
+  if(!navigator.geolocation){
+    showErr("Perangkat tidak mendukung geolocation.");
+    return;
+  }
+  navigator.geolocation.getCurrentPosition((pos)=>{
+    currentGeo = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    const bbox = [currentGeo.lng-0.003, currentGeo.lat-0.003, currentGeo.lng+0.003, currentGeo.lat+0.003].join(',');
+    geoFrame.src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&marker=${currentGeo.lat},${currentGeo.lng}`;
+    geoFrame.classList.remove('hidden');
+    geoEmpty.classList.add('hidden');
+  }, (err)=>{
+    showErr("Gagal mengambil lokasi: " + err.message);
+  }, { enableHighAccuracy:true, timeout:10000 });
+}
+geoBtn.addEventListener('click', refreshGeo);
+refreshGeo();
+
+/* ---------- Messages ---------- */
+function showErr(msg){
+  const box = document.getElementById('errBox');
+  box.textContent = msg;
+  box.style.display = 'block';
+  document.getElementById('msgBox').style.display = 'none';
+}
+function showMsg(msg){
+  const box = document.getElementById('msgBox');
+  box.textContent = msg;
+  box.style.display = 'block';
+  document.getElementById('errBox').style.display = 'none';
+}
+
+/* ---------- Submit ---------- */
+const submitBtn = document.getElementById('submitBtn');
+const jenisSelect = document.getElementById('jenisSelect');
+const clockTypeSelect = document.getElementById('clockTypeSelect');
+
+submitBtn.addEventListener('click', async ()=>{
+  const nama = namaSelect.value;
+  const info = PPNPN_MAP[nama];
+  const jabatan = info ? info.jabatan : '';
+  const nickname = info ? info.nickname : nama;
+  const shift = shiftSelect.classList.contains('hidden') ? '' : shiftSelect.value;
+  const jenis = jenisSelect.value;
+  const clockType = clockTypeSelect.value;
+
+  if(!nama){ showErr("Pilih Nama PPNPN terlebih dahulu."); return; }
+  if(jabatan && jabatan.toLowerCase()==='security' && !shift){ showErr("Pilih Shift Pagi/Malam."); return; }
+  if(!jenis){ showErr("Pilih Jenis Presensi."); return; }
+  if(!clockType){ showErr("Pilih Clock In atau Clock Out."); return; }
+  if(!photoBase64){ showErr("Ambil Foto Presensi terlebih dahulu."); return; }
+  if(!currentGeo){ showErr("Geotagging belum tersedia, tekan tombol Geotagging."); return; }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "MENGIRIM...";
+
+  const payload = {
+    nama, jabatan, nickname, shift, jenisPresensi: jenis,
+    clockType, fotoBase64: photoBase64,
+    lat: currentGeo.lat, lng: currentGeo.lng,
+    timestampID: nowStringID()
+  };
+
+  try{
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if(json.ok){
+      showMsg(`Terima kasih, ${nickname}! Presensi ${clockType} pada ${nowStringID()} sukses dikumpulkan!`);
+      photoBase64 = null;
+      photoPreview.classList.add('hidden');
+      photoPlaceholder.classList.remove('hidden');
+      clockTypeSelect.value = "";
+      jenisSelect.value = "";
+    }else{
+      showErr("Gagal menyimpan: " + (json.error || "unknown error"));
+    }
+  }catch(e){
+    showErr("Gagal terhubung ke server: " + e.message);
+  }finally{
+    submitBtn.disabled = false;
+    submitBtn.textContent = "SUBMIT";
+  }
+});
+</script>
+</body>
+</html>
