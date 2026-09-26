@@ -78,6 +78,13 @@
     gap:10px;
   }
   .row-2 .field{flex:1;}
+  .field.link-btn{
+    text-decoration:none;
+    justify-content:center;
+    text-align:center;
+    display:flex;
+    align-items:center;
+  }
   .hidden{display:none !important;}
   .photo-box{
     border:2px dashed #999;
@@ -191,9 +198,12 @@
   <div id="msgBox"></div>
   <div id="errBox"></div>
 
-  <select id="namaSelect" class="field">
-    <option value="">Nama PPNPN ▾</option>
-  </select>
+  <div class="row-2">
+    <select id="namaSelect" class="field" style="flex:2;">
+      <option value="">Nama PPNPN ▾</option>
+    </select>
+    <a href="monitoring.html" class="field link-btn" style="flex:1;">MONITORING</a>
+  </div>
 
   <div class="row-2">
     <div class="field" id="jabatanBox" style="cursor:default;">Jabatan: -</div>
@@ -240,7 +250,7 @@
 <script>
 /* ======================= CONFIG ======================= */
 // Ganti dengan URL Web App hasil deploy Google Apps Script (Code.gs)
-const API_URL = "https://script.google.com/macros/s/AKfycbwcZO8bolQxhTvcTo_1aDUxk75kjZOfEwvAXZzGBqgawCYviMpbQxp3cqQBAQYVVJdX/exec";
+const API_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
 const LAST_UPDATED = "28 September 2026"; // update manual tiap kali kamu edit halaman ini
 /* ========================================================= */
 
