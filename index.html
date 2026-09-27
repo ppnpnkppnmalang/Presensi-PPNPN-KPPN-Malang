@@ -72,7 +72,12 @@
   }
   select.field{
     font-family:inherit;
+    transition:background-color 0.15s ease;
   }
+  .field.sel-purple{ background:#7b2ff7 !important; }
+  .field.sel-green{ background:#1a9c4a !important; }
+  .field.sel-yellow{ background:#f4c430 !important; color:#3a2c00 !important; }
+  .field.sel-red{ background:#d43227 !important; }
   .row-2{
     display:flex;
     gap:10px;
@@ -195,9 +200,6 @@
     <div class="clock-date" id="clockDate">-</div>
   </div>
 
-  <div id="msgBox"></div>
-  <div id="errBox"></div>
-
   <div class="row-2">
     <select id="namaSelect" class="field" style="flex:2;">
       <option value="">Nama PPNPN ▾</option>
@@ -242,6 +244,9 @@
     <iframe id="geoFrame" class="hidden"></iframe>
   </div>
 
+  <div id="msgBox"></div>
+  <div id="errBox"></div>
+
   <button class="submit" id="submitBtn">SUBMIT</button>
 
   <footer id="footerText">2026 created by Dirgayusa</footer>
@@ -250,7 +255,7 @@
 <script>
 /* ======================= CONFIG ======================= */
 // Ganti dengan URL Web App hasil deploy Google Apps Script (Code.gs)
-const API_URL = "https://script.google.com/macros/s/AKfycbwcZO8bolQxhTvcTo_1aDUxk75kjZOfEwvAXZzGBqgawCYviMpbQxp3cqQBAQYVVJdX/exec";
+const API_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
 const LAST_UPDATED = "28 September 2026"; // update manual tiap kali kamu edit halaman ini
 /* ========================================================= */
 
@@ -424,6 +429,19 @@ const submitBtn = document.getElementById('submitBtn');
 const jenisSelect = document.getElementById('jenisSelect');
 const clockTypeSelect = document.getElementById('clockTypeSelect');
 
+jenisSelect.addEventListener('change', ()=>{
+  jenisSelect.classList.remove('sel-purple','sel-green','sel-yellow');
+  if(jenisSelect.value === 'Presensi Normal') jenisSelect.classList.add('sel-purple');
+  else if(jenisSelect.value === 'Lembur Hari Libur') jenisSelect.classList.add('sel-green');
+  else if(jenisSelect.value === 'Dinas Luar') jenisSelect.classList.add('sel-yellow');
+});
+
+clockTypeSelect.addEventListener('change', ()=>{
+  clockTypeSelect.classList.remove('sel-green','sel-red');
+  if(clockTypeSelect.value === 'Clock In') clockTypeSelect.classList.add('sel-green');
+  else if(clockTypeSelect.value === 'Clock Out') clockTypeSelect.classList.add('sel-red');
+});
+
 submitBtn.addEventListener('click', async ()=>{
   const nama = namaSelect.value;
   const info = PPNPN_MAP[nama];
@@ -464,6 +482,8 @@ submitBtn.addEventListener('click', async ()=>{
       photoPlaceholder.classList.remove('hidden');
       clockTypeSelect.value = "";
       jenisSelect.value = "";
+      clockTypeSelect.classList.remove('sel-green','sel-red');
+      jenisSelect.classList.remove('sel-purple','sel-green','sel-yellow');
     }else{
       showErr("Gagal menyimpan: " + (json.error || "unknown error"));
     }
