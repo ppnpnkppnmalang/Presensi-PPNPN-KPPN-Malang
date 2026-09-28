@@ -162,6 +162,13 @@
     font-size:0.85rem;
     margin-top:24px;
   }
+  footer .dev-link{
+    color:#666;
+    text-decoration:none;
+  }
+  footer .dev-link:hover{
+    text-decoration:underline;
+  }
   #msgBox{
     display:none;
     background:#e8f7ee;
@@ -249,7 +256,7 @@
 
   <button class="submit" id="submitBtn">SUBMIT</button>
 
-  <footer id="footerText">2026 created by Dirgayusa</footer>
+  <footer id="footerText">2026 created by <a href="admin.html" class="dev-link">Dirgayusa</a></footer>
 </div>
 
 <script>
@@ -259,8 +266,8 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwcZO8bolQxhTvcTo_1aDUx
 const LAST_UPDATED = "28 September 2026"; // update manual tiap kali kamu edit halaman ini
 /* ========================================================= */
 
-document.getElementById('footerText').textContent =
-  "Terakhir diperbarui: " + LAST_UPDATED + " — created by Dirgayusa";
+document.getElementById('footerText').innerHTML =
+  "Terakhir diperbarui: " + LAST_UPDATED + " — created by <a href=\"admin.html\" class=\"dev-link\">Dirgayusa</a>";
 
 /* ---------- Realtime clock (Indonesian) ---------- */
 const HARI = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];

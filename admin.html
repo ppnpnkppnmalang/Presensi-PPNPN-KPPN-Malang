@@ -261,16 +261,10 @@ function buildDayRows(){
 }
 
 /* ---------- Render tabel + pager ---------- */
-function renderTable(){
+function renderRowsToTable(rows){
   const tbody = document.getElementById('tableBody');
   tbody.innerHTML = '';
-
-  const totalPages = Math.max(1, Math.ceil(dayRows.length / ROWS_PER_PAGE));
-  if(currentPage > totalPages) currentPage = totalPages;
-  const start = (currentPage - 1) * ROWS_PER_PAGE;
-  const pageRows = dayRows.slice(start, start + ROWS_PER_PAGE);
-
-  pageRows.forEach(row=>{
+  rows.forEach(row=>{
     const tr = document.createElement('tr');
     if(!row.bullets) tr.className = 'empty-row';
     const ketHtml = row.bullets
@@ -279,7 +273,13 @@ function renderTable(){
     tr.innerHTML = `<td class="tgl">${row.tanggalLabel}</td><td>${escapeHtml(row.nama)}</td><td>${ketHtml}</td>`;
     tbody.appendChild(tr);
   });
+}
 
+function renderTable(){
+  const totalPages = Math.max(1, Math.ceil(dayRows.length / ROWS_PER_PAGE));
+  if(currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage - 1) * ROWS_PER_PAGE;
+  renderRowsToTable(dayRows.slice(start, start + ROWS_PER_PAGE));
   renderPager(totalPages);
 }
 
@@ -297,6 +297,15 @@ function goToPage(p){
   currentPage = p;
   renderTable();
 }
+
+/* ---------- Cetak PDF: tampilkan SEMUA tanggal (bukan cuma halaman aktif) ---------- */
+window.addEventListener('beforeprint', ()=>{
+  renderRowsToTable(dayRows); // seluruh hari dalam bulan terpilih
+});
+window.addEventListener('afterprint', ()=>{
+  renderTable(); // kembalikan tampilan per-halaman seperti semula
+});
+
 
 function escapeHtml(str){
   return String(str).replace(/[&<>"']/g, c => ({
