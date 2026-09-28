@@ -120,7 +120,17 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<div id="authOverlay" style="position:fixed;inset:0;background:#f2f4f8;z-index:999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:32px 28px;box-shadow:0 4px 18px rgba(0,0,0,0.15);text-align:center;width:280px;">
+    <div style="font-weight:800;color:#0f5c3c;font-size:1.15rem;margin-bottom:16px;">Masukkan Password Admin</div>
+    <input type="password" id="pwInput" style="width:100%;padding:12px;border-radius:8px;border:1px solid #999;font-size:1rem;margin-bottom:12px;box-sizing:border-box;" placeholder="Password">
+    <button id="pwSubmit" style="width:100%;background:#0f5c3c;color:#fff;border:none;padding:12px;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;">Masuk</button>
+    <div id="pwError" style="color:#d43227;font-size:0.85rem;margin-top:10px;display:none;">Password salah, coba lagi.</div>
+  </div>
+</div>
+
+<div class="wrap" id="mainContent" style="display:none;">
   <h1>Monitoring Kehadiran PPNPN KPPN<br>Malang - Admin Version</h1>
 
   <div class="row-2">
@@ -158,7 +168,7 @@
 
 <script>
 /* ======================= CONFIG ======================= */
-const API_URL = "https://script.google.com/macros/s/AKfycbwcZO8bolQxhTvcTo_1aDUxk75kjZOfEwvAXZzGBqgawCYviMpbQxp3cqQBAQYVVJdX/exec"; // sama seperti index.html
+const API_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE"; // sama seperti index.html
 const LAST_UPDATED = "28 September 2026";
 const ROWS_PER_PAGE = 10;
 /* ========================================================= */
@@ -220,7 +230,44 @@ async function loadData(){
   currentPage = 1;
   renderTable();
 }
-loadData();
+
+/* ---------- Gerbang password (dibaca dari sel F1 di sheet DATA) ---------- */
+function unlockPage(){
+  document.getElementById('authOverlay').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
+  loadData();
+}
+
+async function verifyPassword(){
+  const pwInput = document.getElementById('pwInput');
+  const pwError = document.getElementById('pwError');
+  const pw = pwInput.value;
+  pwError.style.display = 'none';
+  try{
+    const res = await fetch(API_URL + '?action=checkAdminPassword&password=' + encodeURIComponent(pw));
+    const json = await res.json();
+    if(json.ok && json.valid){
+      sessionStorage.setItem('adminAuthed', '1');
+      unlockPage();
+    }else{
+      pwError.textContent = 'Password salah, coba lagi.';
+      pwError.style.display = 'block';
+    }
+  }catch(e){
+    pwError.textContent = 'Gagal memeriksa password. Periksa koneksi / API_URL.';
+    pwError.style.display = 'block';
+  }
+}
+
+document.getElementById('pwSubmit').addEventListener('click', verifyPassword);
+document.getElementById('pwInput').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') verifyPassword();
+});
+
+// Kalau sebelumnya sudah berhasil login di tab browser ini, tidak perlu isi password lagi.
+if(sessionStorage.getItem('adminAuthed') === '1'){
+  unlockPage();
+}
 
 /* ---------- Susun 1 baris per tanggal kalender bulan terpilih ---------- */
 function buildDayRows(){
