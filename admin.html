@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoring Kehadiran PPNPN KPPN Malang - Admin Version</title>
+<style>
+  :root{
+    --green:#0f5c3c;
+    --green-dark:#0b4a30;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    background:#f2f4f8;
+    color:#111;
+    padding-bottom:40px;
+  }
+  .wrap{
+    max-width:900px;
+    margin:0 auto;
+    padding:20px 16px;
+  }
+  h1{
+    color:var(--green);
+    font-size:1.9rem;
+    text-align:center;
+    line-height:1.2;
+    margin:10px 0 20px;
+    text-transform:uppercase;
+    font-weight:800;
+  }
+  .row-2{
+    display:flex;
+    gap:14px;
+    margin-bottom:18px;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+  select.field{
+    background:var(--green);
+    color:#fff;
+    border:none;
+    border-radius:30px;
+    padding:14px 26px;
+    font-size:1.1rem;
+    font-weight:700;
+    appearance:none;
+    -webkit-appearance:none;
+    min-width:220px;
+    text-align:center;
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+    background:#fff;
+    margin-bottom:14px;
+  }
+  th, td{
+    border:1px solid #111;
+    padding:10px 12px;
+    font-size:0.9rem;
+    vertical-align:top;
+    text-align:left;
+  }
+  th{
+    background:var(--green);
+    color:#fff;
+    text-align:center;
+    font-size:0.95rem;
+  }
+  td.tgl{ white-space:nowrap; }
+  td ul{ margin:0; padding-left:18px; }
+  td ul li{ margin-bottom:4px; }
+  .empty-row td{ color:#bbb; }
+  .pager{
+    text-align:center;
+    margin:14px 0;
+  }
+  .pager a{
+    margin:0 6px;
+    color:#111;
+    text-decoration:none;
+    cursor:pointer;
+    font-size:1rem;
+  }
+  .pager a.active{ text-decoration:underline; font-weight:800; }
+  .pager .label{ display:block; font-size:0.85rem; color:#555; margin-top:2px; }
+  .actions{
+    display:flex;
+    justify-content:center;
+    gap:36px;
+    margin:24px 0 10px;
+  }
+  .actions button{
+    background:none;
+    border:none;
+    cursor:pointer;
+    text-align:center;
+    font-size:0.8rem;
+    color:#333;
+  }
+  .actions .icon{
+    font-size:1.8rem;
+    display:block;
+    margin-bottom:4px;
+  }
+  .actions .pdf .icon{ color:#e0692b; }
+  .actions .xls .icon{ color:var(--green); }
+  footer{
+    text-align:center;
+    color:#666;
+    font-size:0.85rem;
+    margin-top:24px;
+  }
+  @media print{
+    .row-2, .pager, .actions{ display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Monitoring Kehadiran PPNPN KPPN<br>Malang - Admin Version</h1>
+
+  <div class="row-2">
+    <select id="periodeSelect" class="field"></select>
+    <select id="jenisSelect" class="field">
+      <option value="tlpsw">REKAP LAPORAN TL/PSW</option>
+      <option value="lembur">REKAP LAPORAN LEMBUR</option>
+    </select>
+  </div>
+
+  <table id="dataTable">
+    <thead>
+      <tr>
+        <th style="width:20%;">Tanggal</th>
+        <th style="width:25%;">Nama PPNPN</th>
+        <th id="colKetHeader">Keterangan TL / PSW</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <div class="pager" id="pager"></div>
+
+  <div class="actions">
+    <button class="pdf" onclick="window.print()">
+      <span class="icon">🖨️</span> PRINT TO PDF
+    </button>
+    <button class="xls" onclick="exportExcel()">
+      <span class="icon">📊</span> EXPORT TO EXCEL
+    </button>
+  </div>
+
+  <footer id="footerText">2026 created by Dirgayusa</footer>
+</div>
+
+<script>
+/* ======================= CONFIG ======================= */
+const API_URL = "https://script.google.com/macros/s/AKfycbwcZO8bolQxhTvcTo_1aDUxk75kjZOfEwvAXZzGBqgawCYviMpbQxp3cqQBAQYVVJdX/exec"; // sama seperti index.html
+const LAST_UPDATED = "28 September 2026";
+const ROWS_PER_PAGE = 10;
+/* ========================================================= */
+
+document.getElementById('footerText').textContent =
+  "Terakhir diperbarui: " + LAST_UPDATED + " — created by Dirgayusa";
+
+const BULAN_ID = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+
+let selectedYear, selectedMonth; // selectedMonth: 1-12
+let rawData = [];      // hasil fetch mentah dari server utk periode terpilih
+let dayRows = [];      // 1 baris per tanggal kalender (sudah diformat utk tabel)
+let currentPage = 1;
+
+/* ---------- Periode dropdown ---------- */
+function buildPeriodeOptions(){
+  const sel = document.getElementById('periodeSelect');
+  const now = new Date();
+  const curY = now.getFullYear(), curM = now.getMonth() + 1;
+  for(let y = curY - 1; y <= curY + 1; y++){
+    for(let m = 1; m <= 12; m++){
+      const opt = document.createElement('option');
+      opt.value = y + "-" + m;
+      opt.textContent = BULAN_ID[m-1] + " " + y;
+      if(y === curY && m === curM) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+  selectedYear = curY;
+  selectedMonth = curM;
+}
+buildPeriodeOptions();
+
+document.getElementById('periodeSelect').addEventListener('change', (e)=>{
+  const [y, m] = e.target.value.split('-').map(Number);
+  selectedYear = y;
+  selectedMonth = m;
+  loadData();
+});
+document.getElementById('jenisSelect').addEventListener('change', ()=>{
+  document.getElementById('colKetHeader').textContent =
+    document.getElementById('jenisSelect').value === 'lembur' ? 'Keterangan Lembur' : 'Keterangan TL / PSW';
+  buildDayRows();
+  currentPage = 1;
+  renderTable();
+});
+
+/* ---------- Ambil data dari server ---------- */
+async function loadData(){
+  document.getElementById('tableBody').innerHTML = '<tr><td colspan="3">Memuat data...</td></tr>';
+  try{
+    const res = await fetch(API_URL + `?action=getAdminLaporan&year=${selectedYear}&month=${selectedMonth}`);
+    const json = await res.json();
+    rawData = json.data || [];
+  }catch(e){
+    rawData = [];
+  }
+  buildDayRows();
+  currentPage = 1;
+  renderTable();
+}
+loadData();
+
+/* ---------- Susun 1 baris per tanggal kalender bulan terpilih ---------- */
+function buildDayRows(){
+  const jenis = document.getElementById('jenisSelect').value; // 'tlpsw' | 'lembur'
+  const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+
+  // kelompokkan entri yang relevan per tanggal
+  const byDay = {};
+  rawData.forEach(row=>{
+    let text = null;
+    if(jenis === 'tlpsw'){
+      const kp = row.keteranganPresensi || '';
+      if(kp.indexOf('TL') === 0 || kp.indexOf('PSW') === 0){
+        text = `${row.nama} ${kp} Selama ${row.durasiTLPSW}`;
+      }
+    }else{
+      const kl = row.keteranganLembur || '';
+      if(kl && kl !== '-'){
+        text = `${row.nama} ${kl}`;
+      }
+    }
+    if(!text) return;
+    if(!byDay[row.tanggal]) byDay[row.tanggal] = { names: [], bullets: [] };
+    byDay[row.tanggal].names.push(row.nama);
+    byDay[row.tanggal].bullets.push(text);
+  });
+
+  dayRows = [];
+  for(let d = 1; d <= daysInMonth; d++){
+    const label = `${String(d).padStart(2,'0')} ${BULAN_ID[selectedMonth-1]} ${selectedYear}`;
+    const entry = byDay[d];
+    dayRows.push({
+      tanggalLabel: label,
+      nama: entry ? entry.names.join(', ') : '-',
+      bullets: entry ? entry.bullets : null
+    });
+  }
+}
+
+/* ---------- Render tabel + pager ---------- */
+function renderTable(){
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+
+  const totalPages = Math.max(1, Math.ceil(dayRows.length / ROWS_PER_PAGE));
+  if(currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage - 1) * ROWS_PER_PAGE;
+  const pageRows = dayRows.slice(start, start + ROWS_PER_PAGE);
+
+  pageRows.forEach(row=>{
+    const tr = document.createElement('tr');
+    if(!row.bullets) tr.className = 'empty-row';
+    const ketHtml = row.bullets
+      ? '<ul>' + row.bullets.map(b => `<li>${escapeHtml(b)}</li>`).join('') + '</ul>'
+      : '-';
+    tr.innerHTML = `<td class="tgl">${row.tanggalLabel}</td><td>${escapeHtml(row.nama)}</td><td>${ketHtml}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  renderPager(totalPages);
+}
+
+function renderPager(totalPages){
+  const pager = document.getElementById('pager');
+  let html = '';
+  for(let p = 1; p <= totalPages; p++){
+    html += `<a class="${p===currentPage?'active':''}" onclick="goToPage(${p})">${p}</a>`;
+  }
+  html += '<span class="label">page</span>';
+  pager.innerHTML = html;
+}
+
+function goToPage(p){
+  currentPage = p;
+  renderTable();
+}
+
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+/* ---------- Export to Excel (.xls, seluruh data periode ini, semua halaman) ---------- */
+function exportExcel(){
+  const jenisLabel = document.getElementById('colKetHeader').textContent;
+  let html = `<table border="1"><tr><th>Tanggal</th><th>Nama PPNPN</th><th>${jenisLabel}</th></tr>`;
+  dayRows.forEach(row=>{
+    const ket = row.bullets ? row.bullets.join(' | ') : '-';
+    html += `<tr><td>${row.tanggalLabel}</td><td>${row.nama}</td><td>${ket}</td></tr>`;
+  });
+  html += '</table>';
+
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `Laporan_${jenisLabel.replace(/\s+/g,'_')}_${BULAN_ID[selectedMonth-1]}_${selectedYear}.xls`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+</script>
+</body>
+</html>
