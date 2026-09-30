@@ -331,7 +331,7 @@ photoInput.addEventListener('change', async (e)=>{
   const file = e.target.files[0];
   if(!file) return;
   try{
-    photoBase64 = await resizeImage(file, 500 * 1024);
+    photoBase64 = await resizeImage(file, 300 * 1024);
     photoPreview.src = photoBase64;
     photoPreview.classList.remove('hidden');
     photoPlaceholder.classList.add('hidden');
@@ -347,7 +347,7 @@ function resizeImage(file, maxBytes){
     reader.onerror = ()=> reject(new Error("File tidak terbaca"));
     img.onload = ()=>{
       let width = img.width, height = img.height;
-      let quality = 0.85, maxDim = 1600;
+      let quality = 0.85, maxDim = 1280;
       function render(dim, q){
         const scale = Math.min(1, dim / Math.max(width, height));
         const canvas = document.createElement('canvas');
@@ -425,11 +425,24 @@ submitBtn.addEventListener('click', async ()=>{
     adminPassword: sessionStorage.getItem('adminPassword') || ''
   };
 
+  // Feedback berjalan supaya tombol tidak terlihat "diam" saat upload foto besar / koneksi lambat
+  let elapsed = 0;
+  const tickTimer = setInterval(()=>{
+    elapsed++;
+    submitBtn.textContent = `MENGIRIM... (${elapsed}s)`;
+  }, 1000);
+
+  // Batas waktu keras 60 detik — kalau server/koneksi benar-benar macet, request DIBATALKAN
+  // otomatis dan tombol kembali normal dengan pesan error, bukan diam selamanya.
+  const controller = new AbortController();
+  const timeoutId = setTimeout(()=> controller.abort(), 60000);
+
   try{
     const res = await fetch(API_URL + "?mode=admin", {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: controller.signal
     });
     const json = await res.json();
     if(json.ok){
@@ -443,8 +456,14 @@ submitBtn.addEventListener('click', async ()=>{
       showErr("Gagal menyimpan: " + (json.error || "unknown error"));
     }
   }catch(e){
-    showErr("Gagal terhubung ke server: " + e.message);
+    if(e.name === 'AbortError'){
+      showErr("Waktu tunggu habis (60 detik) — koneksi lambat atau server tidak merespon. Coba lagi, atau pakai foto yang lebih kecil.");
+    }else{
+      showErr("Gagal terhubung ke server: " + e.message);
+    }
   }finally{
+    clearTimeout(timeoutId);
+    clearInterval(tickTimer);
     submitBtn.disabled = false;
     submitBtn.textContent = "SUBMIT";
   }

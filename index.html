@@ -344,7 +344,7 @@ photoInput.addEventListener('change', async (e)=>{
   const file = e.target.files[0];
   if(!file) return;
   try{
-    photoBase64 = await resizeImage(file, 500 * 1024);
+    photoBase64 = await resizeImage(file, 300 * 1024);
     photoPreview.src = photoBase64;
     photoPreview.classList.remove('hidden');
     photoPlaceholder.classList.add('hidden');
@@ -362,7 +362,7 @@ function resizeImage(file, maxBytes){
     img.onload = ()=>{
       let width = img.width, height = img.height;
       let quality = 0.85;
-      let maxDim = 1600;
+      let maxDim = 1280;
 
       function render(dim, q){
         const scale = Math.min(1, dim / Math.max(width, height));
@@ -475,11 +475,20 @@ submitBtn.addEventListener('click', async ()=>{
     timestampID: nowStringID()
   };
 
+  let elapsed = 0;
+  const tickTimer = setInterval(()=>{
+    elapsed++;
+    submitBtn.textContent = `MENGIRIM... (${elapsed}s)`;
+  }, 1000);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(()=> controller.abort(), 60000);
+
   try{
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: controller.signal
     });
     const json = await res.json();
     if(json.ok){
@@ -495,8 +504,14 @@ submitBtn.addEventListener('click', async ()=>{
       showErr("Gagal menyimpan: " + (json.error || "unknown error"));
     }
   }catch(e){
-    showErr("Gagal terhubung ke server: " + e.message);
+    if(e.name === 'AbortError'){
+      showErr("Waktu tunggu habis (60 detik) — koneksi lambat atau server tidak merespon. Coba lagi.");
+    }else{
+      showErr("Gagal terhubung ke server: " + e.message);
+    }
   }finally{
+    clearTimeout(timeoutId);
+    clearInterval(tickTimer);
     submitBtn.disabled = false;
     submitBtn.textContent = "SUBMIT";
   }
