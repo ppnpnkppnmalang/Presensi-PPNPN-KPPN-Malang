@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Input Presensi PPNPN - Admin</title>
+<style>
+  :root{
+    --blue:#0b4fbf;
+    --green:#0f5c3c;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    background:#f2f4f8;
+    color:#111;
+    padding-bottom:40px;
+  }
+  .wrap{
+    max-width:520px;
+    margin:0 auto;
+    padding:20px 16px;
+  }
+  h1{
+    color:var(--blue);
+    font-size:1.9rem;
+    text-align:center;
+    line-height:1.2;
+    margin:10px 0 16px;
+    text-transform:uppercase;
+    font-weight:800;
+  }
+  .navbar{
+    display:flex;
+    gap:10px;
+    margin-bottom:20px;
+  }
+  .navbar a{
+    flex:1;
+    text-decoration:none;
+    background:var(--green);
+    color:#fff;
+    border-radius:10px;
+    padding:12px 10px;
+    text-align:center;
+    font-weight:700;
+    font-size:0.95rem;
+    opacity:0.65;
+  }
+  .navbar a.active{ opacity:1; }
+  .field{
+    width:100%;
+    background:var(--blue);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:14px 16px;
+    font-size:1.1rem;
+    margin-bottom:12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+    appearance:none;
+    -webkit-appearance:none;
+  }
+  select.field{ font-family:inherit; }
+  input.field{ font-family:inherit; color-scheme:dark; }
+  .row-2{ display:flex; gap:10px; }
+  .row-2 .field{ flex:1; }
+  .hidden{ display:none !important; }
+  .field.sel-purple{ background:#7b2ff7 !important; }
+  .field.sel-green{ background:#1a9c4a !important; }
+  .field.sel-yellow{ background:#f4c430 !important; color:#3a2c00 !important; }
+  .field.sel-red{ background:#d43227 !important; }
+  .field.sel-cuti{ background:#0f5c3c !important; }
+  .photo-box{
+    border:2px dashed #999;
+    background:#d9d9d9;
+    border-radius:8px;
+    padding:20px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:14px;
+    cursor:pointer;
+    min-height:60px;
+  }
+  .photo-box img{ max-width:100%; max-height:180px; border-radius:6px; }
+  .photo-box .placeholder{ display:flex; align-items:center; gap:10px; color:#333; }
+  .geo-box{
+    border:2px dashed #999;
+    background:#d9d9d9;
+    border-radius:8px;
+    min-height:120px;
+    margin-bottom:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#c0392b;
+    font-size:1.6rem;
+  }
+  button.submit{
+    width:100%;
+    background:var(--blue);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:18px;
+    font-size:1.4rem;
+    font-weight:800;
+    letter-spacing:1px;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  button.submit:disabled{ opacity:0.6; cursor:not-allowed; }
+  footer{ text-align:center; color:#666; font-size:0.85rem; margin-top:24px; }
+  #msgBox{
+    display:none;
+    background:#e8f7ee; border:1px solid #2ecc71; color:#1a7a3d;
+    padding:14px 16px; border-radius:10px; margin-bottom:14px; font-size:0.95rem;
+  }
+  #errBox{
+    display:none;
+    background:#fdeaea; border:1px solid #e74c3c; color:#a92828;
+    padding:14px 16px; border-radius:10px; margin-bottom:14px; font-size:0.95rem;
+  }
+  input[type=file]{ display:none; }
+</style>
+</head>
+<body>
+
+<div id="authOverlay" style="position:fixed;inset:0;background:#f2f4f8;z-index:999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:14px;padding:32px 28px;box-shadow:0 4px 18px rgba(0,0,0,0.15);text-align:center;width:280px;">
+    <div style="font-weight:800;color:#0f5c3c;font-size:1.15rem;margin-bottom:16px;">Masukkan Password Admin</div>
+    <input type="password" id="pwInput" style="width:100%;padding:12px;border-radius:8px;border:1px solid #999;font-size:1rem;margin-bottom:12px;box-sizing:border-box;" placeholder="Password">
+    <button id="pwSubmit" style="width:100%;background:#0f5c3c;color:#fff;border:none;padding:12px;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;">Masuk</button>
+    <div id="pwError" style="color:#d43227;font-size:0.85rem;margin-top:10px;display:none;">Password salah, coba lagi.</div>
+  </div>
+</div>
+
+<div class="wrap" id="mainContent" style="display:none;">
+  <h1>Input Presensi PPNPN<br>KPPN Malang (Admin)</h1>
+
+  <div class="navbar">
+    <a href="admin.html">📊 LAPORAN</a>
+    <a href="admin-input.html" class="active">📋 ADMIN INPUT</a>
+  </div>
+
+  <div id="msgBox"></div>
+  <div id="errBox"></div>
+
+  <select id="namaSelect" class="field">
+    <option value="">Nama PPNPN ▾</option>
+  </select>
+
+  <div class="row-2">
+    <div class="field" id="jabatanBox" style="cursor:default;">Jabatan: -</div>
+    <select id="shiftSelect" class="field hidden">
+      <option value="">Shift Pagi/Malam ▾</option>
+      <option value="Pagi">Pagi</option>
+      <option value="Malam">Malam</option>
+    </select>
+  </div>
+
+  <div class="row-2">
+    <input type="date" id="tanggalInput" class="field">
+    <input type="time" id="waktuInput" class="field">
+  </div>
+
+  <select id="jenisSelect" class="field">
+    <option value="">Jenis Presensi ▾</option>
+    <option value="Presensi Normal">Presensi Normal</option>
+    <option value="Lembur Hari Libur">Lembur Hari Libur</option>
+    <option value="Dinas Luar">Dinas Luar</option>
+    <option value="Cuti Sakit">Cuti Sakit</option>
+    <option value="Cuti Tahunan">Cuti Tahunan</option>
+    <option value="Cuti Alasan Penting">Cuti Alasan Penting</option>
+  </select>
+
+  <select id="clockTypeSelect" class="field">
+    <option value="">Clock In / Clock Out ▾</option>
+    <option value="Clock In">Clock In</option>
+    <option value="Clock Out">Clock Out</option>
+  </select>
+
+  <div class="field" id="fotoLabel" style="cursor:default;">Foto Presensi</div>
+  <div class="photo-box" id="photoBox">
+    <div class="placeholder" id="photoPlaceholder">
+      📷 <span id="photoPlaceholderText">Pilih foto presensi</span>
+    </div>
+    <img id="photoPreview" class="hidden">
+  </div>
+  <input type="file" id="photoInput" accept="image/*">
+
+  <div id="geoSection">
+    <div class="field" id="geoBtn">Geotagging <span>⟳</span></div>
+    <div class="geo-box" id="geoBox">📍 <span id="geoStatus" style="font-size:0.85rem;margin-left:8px;color:#555;">belum diambil (opsional)</span></div>
+  </div>
+
+  <button class="submit" id="submitBtn">SUBMIT</button>
+
+  <footer id="footerText">2026 created by Dirgayusa</footer>
+</div>
+
+<script>
+/* ======================= CONFIG ======================= */
+const API_URL = "https://script.google.com/macros/s/AKfycbwcZO8bolQxhTvcTo_1aDUxk75kjZOfEwvAXZzGBqgawCYviMpbQxp3cqQBAQYVVJdX/exec";
+const LAST_UPDATED = "28 September 2026";
+/* ========================================================= */
+
+document.getElementById('footerText').textContent =
+  "Terakhir diperbarui: " + LAST_UPDATED + " — created by Dirgayusa";
+
+const CUTI_TYPES = ["Cuti Sakit", "Cuti Tahunan", "Cuti Alasan Penting"];
+let PPNPN_MAP = {};
+let photoBase64 = null;
+let currentGeo = null;
+
+/* ---------- Password gate (sel F1 sheet DATA, sama dgn admin.html) ---------- */
+function unlockPage(){
+  document.getElementById('authOverlay').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
+  loadNama();
+  setDefaultDateTime();
+}
+async function verifyPassword(){
+  const pwInput = document.getElementById('pwInput');
+  const pwError = document.getElementById('pwError');
+  pwError.style.display = 'none';
+  try{
+    const res = await fetch(API_URL + '?action=checkAdminPassword&password=' + encodeURIComponent(pwInput.value));
+    const json = await res.json();
+    if(json.ok && json.valid){
+      sessionStorage.setItem('adminAuthed', '1');
+      sessionStorage.setItem('adminPassword', pwInput.value); // dikirim ulang saat submit, dicek lagi di server
+      unlockPage();
+    }else{
+      pwError.textContent = 'Password salah, coba lagi.';
+      pwError.style.display = 'block';
+    }
+  }catch(e){
+    pwError.textContent = 'Gagal memeriksa password. Periksa koneksi / API_URL.';
+    pwError.style.display = 'block';
+  }
+}
+document.getElementById('pwSubmit').addEventListener('click', verifyPassword);
+document.getElementById('pwInput').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') verifyPassword(); });
+if(sessionStorage.getItem('adminAuthed') === '1'){ unlockPage(); }
+
+/* ---------- Tanggal/Waktu default = sekarang (admin masih bisa ubah bebas) ---------- */
+function setDefaultDateTime(){
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('tanggalInput').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  document.getElementById('waktuInput').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+}
+
+/* ---------- Nama PPNPN & Jabatan ---------- */
+async function loadNama(){
+  try{
+    const res = await fetch(API_URL + "?action=getData");
+    const json = await res.json();
+    const sel = document.getElementById('namaSelect');
+    (json.data || []).forEach(row=>{
+      PPNPN_MAP[row.nama] = { jabatan: row.jabatan, nickname: row.nickname };
+      const opt = document.createElement('option');
+      opt.value = row.nama;
+      opt.textContent = row.nama;
+      sel.appendChild(opt);
+    });
+  }catch(e){
+    showErr("Gagal memuat daftar nama PPNPN.");
+  }
+}
+
+const namaSelect = document.getElementById('namaSelect');
+const jabatanBox = document.getElementById('jabatanBox');
+const shiftSelect = document.getElementById('shiftSelect');
+namaSelect.addEventListener('change', ()=>{
+  const info = PPNPN_MAP[namaSelect.value];
+  const jabatan = info ? info.jabatan : '-';
+  jabatanBox.textContent = "Jabatan: " + jabatan;
+  if(jabatan && jabatan.toLowerCase() === 'security'){
+    shiftSelect.classList.remove('hidden');
+  }else{
+    shiftSelect.classList.add('hidden');
+    shiftSelect.value = "";
+  }
+});
+
+/* ---------- Jenis Presensi: warna + tampilkan/sembunyikan field sesuai Cuti atau bukan ---------- */
+const jenisSelect = document.getElementById('jenisSelect');
+const clockTypeSelect = document.getElementById('clockTypeSelect');
+const waktuInput = document.getElementById('waktuInput');
+const geoSection = document.getElementById('geoSection');
+const fotoLabel = document.getElementById('fotoLabel');
+const photoPlaceholderText = document.getElementById('photoPlaceholderText');
+
+jenisSelect.addEventListener('change', ()=>{
+  jenisSelect.classList.remove('sel-purple','sel-green','sel-yellow','sel-cuti');
+  const v = jenisSelect.value;
+  if(v === 'Presensi Normal') jenisSelect.classList.add('sel-purple');
+  else if(v === 'Lembur Hari Libur') jenisSelect.classList.add('sel-green');
+  else if(v === 'Dinas Luar') jenisSelect.classList.add('sel-yellow');
+  else if(CUTI_TYPES.indexOf(v) !== -1) jenisSelect.classList.add('sel-cuti');
+
+  const isCuti = CUTI_TYPES.indexOf(v) !== -1;
+  waktuInput.classList.toggle('hidden', isCuti);
+  clockTypeSelect.classList.toggle('hidden', isCuti);
+  geoSection.classList.toggle('hidden', isCuti);
+  fotoLabel.textContent = isCuti ? 'Upload Surat Cuti' : 'Foto Presensi';
+  photoPlaceholderText.textContent = isCuti ? 'Pilih foto/scan surat cuti' : 'Pilih foto presensi';
+  if(isCuti) clockTypeSelect.value = '';
+});
+
+clockTypeSelect.addEventListener('change', ()=>{
+  clockTypeSelect.classList.remove('sel-green','sel-red');
+  if(clockTypeSelect.value === 'Clock In') clockTypeSelect.classList.add('sel-green');
+  else if(clockTypeSelect.value === 'Clock Out') clockTypeSelect.classList.add('sel-red');
+});
+
+/* ---------- Foto (kamera/galeri, resize < 500KB) ---------- */
+const photoBox = document.getElementById('photoBox');
+const photoInput = document.getElementById('photoInput');
+const photoPreview = document.getElementById('photoPreview');
+const photoPlaceholder = document.getElementById('photoPlaceholder');
+photoBox.addEventListener('click', ()=> photoInput.click());
+photoInput.addEventListener('change', async (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  try{
+    photoBase64 = await resizeImage(file, 500 * 1024);
+    photoPreview.src = photoBase64;
+    photoPreview.classList.remove('hidden');
+    photoPlaceholder.classList.add('hidden');
+  }catch(err){
+    showErr("Gagal memproses foto: " + err.message);
+  }
+});
+function resizeImage(file, maxBytes){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = ()=>{ img.src = reader.result; };
+    reader.onerror = ()=> reject(new Error("File tidak terbaca"));
+    img.onload = ()=>{
+      let width = img.width, height = img.height;
+      let quality = 0.85, maxDim = 1600;
+      function render(dim, q){
+        const scale = Math.min(1, dim / Math.max(width, height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(width * scale);
+        canvas.height = Math.round(height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL('image/jpeg', q);
+      }
+      let dataUrl = render(maxDim, quality);
+      let guard = 0;
+      while(dataUrl.length * 0.75 > maxBytes && guard < 12){
+        if(quality > 0.4) quality -= 0.1; else maxDim = Math.round(maxDim * 0.8);
+        dataUrl = render(maxDim, quality);
+        guard++;
+      }
+      resolve(dataUrl);
+    };
+    img.onerror = ()=> reject(new Error("Gambar tidak valid"));
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ---------- Geotagging (opsional — data historis, lokasi admin skrg blm tentu relevan) ---------- */
+document.getElementById('geoBtn').addEventListener('click', ()=>{
+  if(!navigator.geolocation){ showErr("Perangkat tidak mendukung geolocation."); return; }
+  navigator.geolocation.getCurrentPosition((pos)=>{
+    currentGeo = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    document.getElementById('geoStatus').textContent = `terambil: ${currentGeo.lat.toFixed(5)}, ${currentGeo.lng.toFixed(5)}`;
+  }, (err)=> showErr("Gagal mengambil lokasi: " + err.message), { enableHighAccuracy:true, timeout:10000 });
+});
+
+/* ---------- Messages ---------- */
+function showErr(msg){
+  const box = document.getElementById('errBox');
+  box.textContent = msg; box.style.display = 'block';
+  document.getElementById('msgBox').style.display = 'none';
+}
+function showMsg(msg){
+  const box = document.getElementById('msgBox');
+  box.textContent = msg; box.style.display = 'block';
+  document.getElementById('errBox').style.display = 'none';
+}
+
+/* ---------- Submit ---------- */
+const submitBtn = document.getElementById('submitBtn');
+submitBtn.addEventListener('click', async ()=>{
+  const nama = namaSelect.value;
+  const info = PPNPN_MAP[nama];
+  const jabatan = info ? info.jabatan : '';
+  const shift = shiftSelect.classList.contains('hidden') ? '' : shiftSelect.value;
+  const jenis = jenisSelect.value;
+  const tanggal = document.getElementById('tanggalInput').value;
+  const waktu = waktuInput.value;
+  const clockType = clockTypeSelect.value;
+  const isCuti = CUTI_TYPES.indexOf(jenis) !== -1;
+
+  if(!nama){ showErr("Pilih Nama PPNPN terlebih dahulu."); return; }
+  if(jabatan && jabatan.toLowerCase()==='security' && !shift){ showErr("Pilih Shift Pagi/Malam."); return; }
+  if(!jenis){ showErr("Pilih Jenis Presensi."); return; }
+  if(!tanggal){ showErr("Pilih Tanggal."); return; }
+  if(!isCuti && !waktu){ showErr("Pilih Waktu."); return; }
+  if(!isCuti && !clockType){ showErr("Pilih Clock In atau Clock Out."); return; }
+  if(!photoBase64){ showErr(isCuti ? "Upload foto/scan surat cuti terlebih dahulu." : "Ambil Foto Presensi terlebih dahulu."); return; }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = "MENGIRIM...";
+
+  const payload = {
+    nama, jabatan, shift, jenisPresensi: jenis,
+    tanggal, waktu: isCuti ? '' : waktu,
+    clockType: isCuti ? '' : clockType,
+    fotoBase64,
+    lat: currentGeo ? currentGeo.lat : '',
+    lng: currentGeo ? currentGeo.lng : '',
+    adminPassword: sessionStorage.getItem('adminPassword') || ''
+  };
+
+  try{
+    const res = await fetch(API_URL + "?mode=admin", {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if(json.ok){
+      showMsg(`Data presensi untuk ${nama} pada ${result_tanggal(tanggal)} berhasil disimpan.`);
+      photoBase64 = null;
+      photoPreview.classList.add('hidden');
+      photoPlaceholder.classList.remove('hidden');
+      jenisSelect.value = ""; jenisSelect.classList.remove('sel-purple','sel-green','sel-yellow','sel-cuti');
+      clockTypeSelect.value = ""; clockTypeSelect.classList.remove('sel-green','sel-red');
+    }else{
+      showErr("Gagal menyimpan: " + (json.error || "unknown error"));
+    }
+  }catch(e){
+    showErr("Gagal terhubung ke server: " + e.message);
+  }finally{
+    submitBtn.disabled = false;
+    submitBtn.textContent = "SUBMIT";
+  }
+});
+
+function result_tanggal(isoDate){
+  const [y,m,d] = isoDate.split('-').map(Number);
+  const BULAN_ID = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+  return `${d} ${BULAN_ID[m-1]} ${y}`;
+}
+</script>
+</body>
+</html>
