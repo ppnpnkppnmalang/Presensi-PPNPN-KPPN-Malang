@@ -66,6 +66,12 @@
     -webkit-appearance:none;
   }
   select.field{ font-family:inherit; }
+  /* Paksa tampilan 24 jam pada input Waktu: browser Chrome/Edge menampilkan format
+     jam berdasarkan locale device (bisa AM/PM). Ini menyembunyikan bagian AM/PM
+     supaya yang terlihat cuma HH:MM, tanpa mengubah cara kerja pickernya. */
+  input[type="time"]::-webkit-datetime-edit-ampm-field{
+    display:none;
+  }
   input.field{ font-family:inherit; color-scheme:dark; }
   .row-2{ display:flex; gap:10px; }
   .row-2 .field{ flex:1; }

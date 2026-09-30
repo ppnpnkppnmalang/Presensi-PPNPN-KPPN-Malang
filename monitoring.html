@@ -376,6 +376,16 @@ function selectDate(day, key){
     return;
   }
 
+  // ---- Cuti (Sakit/Tahunan/Alasan Penting): tampilkan satu baris saja, bukan Clock In/Out ----
+  const jenis = entry.jenisPresensi || '';
+  if(jenis.indexOf('Cuti') === 0){
+    html += `<span class="status-blue" style="font-size:1.1rem;">${jenis.toUpperCase()}</span>`;
+    document.getElementById('infoText').innerHTML = html;
+    setPhoto('photoInWrap', entry.clockInPhoto); // surat cuti disimpan di kolom Clock In Photo
+    setPhoto('photoOutWrap', '');
+    return;
+  }
+
   // ---- Presensi Clock In ----
   if(entry.clockIn){
     const kp = entry.keteranganPresensi || '';
