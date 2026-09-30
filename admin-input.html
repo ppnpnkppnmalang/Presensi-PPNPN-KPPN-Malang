@@ -419,7 +419,7 @@ submitBtn.addEventListener('click', async ()=>{
     nama, jabatan, shift, jenisPresensi: jenis,
     tanggal, waktu: isCuti ? '' : waktu,
     clockType: isCuti ? '' : clockType,
-    fotoBase64,
+    fotoBase64: photoBase64,
     lat: currentGeo ? currentGeo.lat : '',
     lng: currentGeo ? currentGeo.lng : '',
     adminPassword: sessionStorage.getItem('adminPassword') || ''
