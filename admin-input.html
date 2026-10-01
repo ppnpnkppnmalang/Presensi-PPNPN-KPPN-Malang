@@ -66,12 +66,23 @@
     -webkit-appearance:none;
   }
   select.field{ font-family:inherit; }
-  /* Paksa tampilan 24 jam pada input Waktu: browser Chrome/Edge menampilkan format
-     jam berdasarkan locale device (bisa AM/PM). Ini menyembunyikan bagian AM/PM
-     supaya yang terlihat cuma HH:MM, tanpa mengubah cara kerja pickernya. */
-  input[type="time"]::-webkit-datetime-edit-ampm-field{
-    display:none;
+  .waktu-field{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
   }
+  .waktu-field select{
+    background:transparent;
+    border:none;
+    color:#fff;
+    font-size:1.1rem;
+    font-weight:700;
+    font-family:inherit;
+    text-align:center;
+    cursor:pointer;
+  }
+  .waktu-field select option{ color:#111; }
   input.field{ font-family:inherit; color-scheme:dark; }
   .row-2{ display:flex; gap:10px; }
   .row-2 .field{ flex:1; }
@@ -172,7 +183,11 @@
 
   <div class="row-2">
     <input type="date" id="tanggalInput" class="field">
-    <input type="time" id="waktuInput" class="field">
+    <div class="field waktu-field" id="waktuWrap">
+      <select id="jamSelect"></select>
+      <span>:</span>
+      <select id="menitSelect"></select>
+    </div>
   </div>
 
   <select id="jenisSelect" class="field">
@@ -255,12 +270,31 @@ document.getElementById('pwSubmit').addEventListener('click', verifyPassword);
 document.getElementById('pwInput').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') verifyPassword(); });
 if(sessionStorage.getItem('adminAuthed') === '1'){ unlockPage(); }
 
+/* ---------- Dropdown Jam (00-23) & Menit (00-59) — format 24 jam, tidak bergantung locale ---------- */
+function buildJamMenitOptions(){
+  const pad = n => String(n).padStart(2,'0');
+  const jamSel = document.getElementById('jamSelect');
+  const menitSel = document.getElementById('menitSelect');
+  for(let h = 0; h < 24; h++){
+    const opt = document.createElement('option');
+    opt.value = pad(h); opt.textContent = pad(h);
+    jamSel.appendChild(opt);
+  }
+  for(let m = 0; m < 60; m++){
+    const opt = document.createElement('option');
+    opt.value = pad(m); opt.textContent = pad(m);
+    menitSel.appendChild(opt);
+  }
+}
+buildJamMenitOptions();
+
 /* ---------- Tanggal/Waktu default = sekarang (admin masih bisa ubah bebas) ---------- */
 function setDefaultDateTime(){
   const now = new Date();
   const pad = n => String(n).padStart(2,'0');
   document.getElementById('tanggalInput').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
-  document.getElementById('waktuInput').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  document.getElementById('jamSelect').value = pad(now.getHours());
+  document.getElementById('menitSelect').value = pad(now.getMinutes());
 }
 
 /* ---------- Nama PPNPN & Jabatan ---------- */
@@ -299,7 +333,7 @@ namaSelect.addEventListener('change', ()=>{
 /* ---------- Jenis Presensi: warna + tampilkan/sembunyikan field sesuai Cuti atau bukan ---------- */
 const jenisSelect = document.getElementById('jenisSelect');
 const clockTypeSelect = document.getElementById('clockTypeSelect');
-const waktuInput = document.getElementById('waktuInput');
+const waktuWrap = document.getElementById('waktuWrap');
 const geoSection = document.getElementById('geoSection');
 const fotoLabel = document.getElementById('fotoLabel');
 const photoPlaceholderText = document.getElementById('photoPlaceholderText');
@@ -313,7 +347,7 @@ jenisSelect.addEventListener('change', ()=>{
   else if(CUTI_TYPES.indexOf(v) !== -1) jenisSelect.classList.add('sel-cuti');
 
   const isCuti = CUTI_TYPES.indexOf(v) !== -1;
-  waktuInput.classList.toggle('hidden', isCuti);
+  waktuWrap.classList.toggle('hidden', isCuti);
   clockTypeSelect.classList.toggle('hidden', isCuti);
   geoSection.classList.toggle('hidden', isCuti);
   fotoLabel.textContent = isCuti ? 'Upload Surat Cuti' : 'Foto Presensi';
@@ -406,7 +440,7 @@ submitBtn.addEventListener('click', async ()=>{
   const shift = shiftSelect.classList.contains('hidden') ? '' : shiftSelect.value;
   const jenis = jenisSelect.value;
   const tanggal = document.getElementById('tanggalInput').value;
-  const waktu = waktuInput.value;
+  const waktu = document.getElementById('jamSelect').value + ':' + document.getElementById('menitSelect').value;
   const clockType = clockTypeSelect.value;
   const isCuti = CUTI_TYPES.indexOf(jenis) !== -1;
 
