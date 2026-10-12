@@ -308,7 +308,14 @@ function buildDayRows(){
     if(jenis === 'tlpsw'){
       const kp = row.keteranganPresensi || '';
       if(kp.indexOf('TL') === 0 || kp.indexOf('PSW') === 0){
-        text = `${row.nama} ${kp} Selama ${row.durasiTLPSW}`;
+        const dur = row.durasiTLPSW || '';
+        if(dur.indexOf('Jam') !== -1){
+          text = `${row.nama} ${kp} Selama ${dur}`;
+        }else if(dur && dur !== '-'){
+          text = `${row.nama} ${kp} (${dur})`; // mis. "Tidak ada data Clock In"
+        }else{
+          text = `${row.nama} ${kp}`;
+        }
       }
     }else{
       const kl = row.keteranganLembur || '';

@@ -395,7 +395,12 @@ function selectDate(day, key){
     else { label = '-'; cls = 'status-grey'; }
     html += `Presensi Clock In:<br><span class="${cls}">${label}</span>, ${entry.clockIn}<br><br>`;
   }else{
-    html += `Presensi Clock In:<br><span class="status-grey">Belum presensi</span><br><br>`;
+    const kpIn = entry.keteranganPresensi || '';
+    if(kpIn.indexOf('TL') === 0){
+      html += `Presensi Clock In:<br><span class="status-red">${kpIn}</span> (tidak ada data Clock In)<br><br>`;
+    }else{
+      html += `Presensi Clock In:<br><span class="status-grey">Belum presensi</span><br><br>`;
+    }
   }
 
   // ---- Presensi Clock Out ----
@@ -410,7 +415,12 @@ function selectDate(day, key){
     else { label = '-'; cls = 'status-grey'; }
     html += `Presensi Clock Out:<br><span class="${cls}">${label}</span>, ${entry.clockOut}`;
   }else{
-    html += `Presensi Clock Out:<br><span class="status-grey">Belum presensi</span>`;
+    const kpOut = entry.keteranganPresensi || '';
+    if(kpOut.indexOf('PSW') === 0){
+      html += `Presensi Clock Out:<br><span class="status-red">${kpOut}</span> (tidak ada data Clock Out)`;
+    }else{
+      html += `Presensi Clock Out:<br><span class="status-grey">Belum presensi</span>`;
+    }
   }
 
   document.getElementById('infoText').innerHTML = html;
