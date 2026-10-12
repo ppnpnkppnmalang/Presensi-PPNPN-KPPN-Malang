@@ -294,20 +294,82 @@ function nowStringID(){
 /* ---------- Load DATA (Nama/Jabatan/Nickname) from sheet ---------- */
 let PPNPN_MAP = {}; // { nama: {jabatan, nickname} }
 
-async function loadData(){
+const NAMA_CACHE_KEY = 'ppnpn_data_v1';
+let namaErrShown = false;
+
+function readNamaCache(){
   try{
-    const res = await fetch(API_URL + "?action=getData");
-    const json = await res.json();
-    const sel = document.getElementById('namaSelect');
-    (json.data || []).forEach(row=>{
-      PPNPN_MAP[row.nama] = { jabatan: row.jabatan, nickname: row.nickname };
-      const opt = document.createElement('option');
-      opt.value = row.nama;
-      opt.textContent = row.nama;
-      sel.appendChild(opt);
-    });
+    const o = JSON.parse(localStorage.getItem(NAMA_CACHE_KEY) || 'null');
+    return (o && Array.isArray(o.data)) ? o.data : null;
+  }catch(e){ return null; }
+}
+function writeNamaCache(data){
+  try{ localStorage.setItem(NAMA_CACHE_KEY, JSON.stringify({ t: Date.now(), data: data })); }catch(e){}
+}
+
+// Coba ambil daftar nama sampai 3x (jeda 0s, 1.5s, 3s), tiap percobaan maksimal 12 detik.
+async function fetchNamaWithRetry(){
+  const delays = [0, 1500, 3000];
+  let lastErr;
+  for(let i = 0; i < delays.length; i++){
+    if(delays[i]) await new Promise(r => setTimeout(r, delays[i]));
+    const controller = new AbortController();
+    const to = setTimeout(() => controller.abort(), 12000);
+    try{
+      const res = await fetch(API_URL + "?action=getData", { signal: controller.signal });
+      const json = await res.json();
+      clearTimeout(to);
+      if(json && json.ok && Array.isArray(json.data)) return json.data;
+      throw new Error('respon tidak valid');
+    }catch(e){
+      clearTimeout(to);
+      lastErr = e;
+    }
+  }
+  throw lastErr;
+}
+
+function renderNama(list){
+  const sel = document.getElementById('namaSelect');
+  const current = sel.value;
+  while(sel.options.length > 1) sel.remove(1);
+  PPNPN_MAP = {};
+  list.forEach(row=>{
+    PPNPN_MAP[row.nama] = { jabatan: row.jabatan, nickname: row.nickname };
+    const opt = document.createElement('option');
+    opt.value = row.nama;
+    opt.textContent = row.nama;
+    sel.appendChild(opt);
+  });
+  // Pertahankan pilihan yang sudah dipilih orang (kalau namanya masih ada di daftar baru)
+  if(current && PPNPN_MAP[current]){
+    sel.value = current;
+    sel.dispatchEvent(new Event('change'));
+  }
+}
+
+async function loadData(){
+  // 1) Tampilkan daftar nama terakhir yang tersimpan di HP/browser SEKETIKA (tanpa menunggu server)
+  const cached = readNamaCache();
+  if(cached && cached.length) renderNama(cached);
+
+  // 2) Segarkan dari server di belakang layar
+  try{
+    const fresh = await fetchNamaWithRetry();
+    if(JSON.stringify(fresh) !== JSON.stringify(cached)) renderNama(fresh);
+    writeNamaCache(fresh);
+    if(namaErrShown){
+      document.getElementById('errBox').style.display = 'none';
+      namaErrShown = false;
+    }
   }catch(e){
-    showErr("Gagal memuat daftar nama PPNPN. Periksa koneksi / URL API.");
+    if(!cached || !cached.length){
+      // Belum pernah ada data tersimpan & server tidak merespon: coba lagi otomatis tiap 8 detik
+      showErr("Daftar nama belum bisa dimuat (koneksi lambat). Mencoba lagi otomatis...");
+      namaErrShown = true;
+      setTimeout(loadData, 8000);
+    }
+    // Kalau sudah ada salinan tersimpan, form tetap bisa dipakai tanpa pesan error.
   }
 }
 loadData();
